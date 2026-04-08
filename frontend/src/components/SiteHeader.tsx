@@ -13,6 +13,7 @@ const adminLinks = [
   { href: "/documents", label: "Документы" },
   { href: "/upload", label: "Загрузка" },
   { href: "/admin", label: "Админ" },
+  { href: "/admin/roles", label: "Роли" },
 ];
 
 export function SiteHeader() {

@@ -10,6 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 import { SeedService } from './seed.service';
 import { DocumentsModule } from '../documents/documents.module';
 import { UsersController } from './users.controller';
+import { UsersService } from '../users/users.service';
 
 @Module({
   imports: [
@@ -26,7 +27,7 @@ import { UsersController } from './users.controller';
     }),
   ],
   controllers: [AuthController, UsersController],
-  providers: [AuthService, JwtStrategy, SeedService],
+  providers: [AuthService, UsersService, JwtStrategy, SeedService],
   exports: [JwtStrategy, PassportModule],
 })
 export class AuthModule {}
