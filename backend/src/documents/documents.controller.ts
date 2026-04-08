@@ -47,6 +47,19 @@ export class DocumentsController {
     return this.docsService.listForUser(req.user);
   }
 
+  /** Публично: сведения о документе по ID (без JWT) */
+  @Get('public/:documentId')
+  getPublic(@Param('documentId') documentId: string) {
+    return this.docsService.getPublicByDocumentId(documentId);
+  }
+
+  /** Публично: проверка только по загруженному PDF (поиск записи по хэшу) */
+  @Post('verify-file')
+  @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
+  verifyByFile(@UploadedFile() file: Express.Multer.File) {
+    return this.docsService.verifyByUploadedFile(file);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.KAFEDRA, UserRole.DEKANAT, UserRole.STUDENT)
   @Get(':documentId')

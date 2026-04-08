@@ -251,13 +251,10 @@ export class DocumentsService {
     return this.toResponse(await this.docsRepo.save(doc));
   }
 
-  async verify(documentId: string, file: Express.Multer.File) {
-    const doc = await this.docsRepo.findOne({ where: { documentId } });
-    if (!doc) throw new NotFoundException('Документ не найден');
-    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Только PDF');
-    const calculatedHash = createHash('sha256').update(file.buffer).digest('hex');
+  /** Сравнение хэша файла с записью в БД и (при наличии) проверка в контракте */
+  private async buildVerificationResult(doc: Document, calculatedHash: string) {
     const onChain = this.contract
-      ? await this.contract.verifyDocument(documentId, `0x${calculatedHash}`)
+      ? await this.contract.verifyDocument(doc.documentId, `0x${calculatedHash}`)
       : false;
     const hashMatches = calculatedHash === doc.hashSha256;
     const authentic = hashMatches && Boolean(onChain);
@@ -271,6 +268,43 @@ export class DocumentsService {
       verificationMessage: authentic
         ? 'Документ подлинный'
         : 'Документ изменён или не найден в реестре',
+    };
+  }
+
+  /** POST /documents/:documentId/verify — нужны ID и файл */
+  async verify(documentId: string, file: Express.Multer.File) {
+    const doc = await this.docsRepo.findOne({ where: { documentId } });
+    if (!doc) throw new NotFoundException('Документ не найден');
+    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Только PDF');
+    const calculatedHash = createHash('sha256').update(file.buffer).digest('hex');
+    return this.buildVerificationResult(doc, calculatedHash);
+  }
+
+  /** POST /documents/verify-file — только файл: поиск записи по SHA-256 содержимого */
+  async verifyByUploadedFile(file: Express.Multer.File) {
+    if (!file?.buffer) throw new BadRequestException('Загрузите PDF-файл');
+    if (file.mimetype !== 'application/pdf') throw new BadRequestException('Только PDF');
+    const calculatedHash = createHash('sha256').update(file.buffer).digest('hex');
+    const doc = await this.docsRepo.findOne({ where: { hashSha256: calculatedHash } });
+    if (!doc) {
+      throw new NotFoundException('Документ с таким содержимым в реестре не найден');
+    }
+    return this.buildVerificationResult(doc, calculatedHash);
+  }
+
+  /** GET /documents/public/:documentId — сведения о документе по ID (без сверки файла) */
+  async getPublicByDocumentId(documentId: string) {
+    const doc = await this.docsRepo.findOne({ where: { documentId } });
+    if (!doc) throw new NotFoundException('Документ не найден');
+    const base = this.toResponse(doc);
+    return {
+      ...base,
+      lookupById: true as const,
+      verificationMessage: 'Документ найден в системе',
+      calculatedHash: null as null,
+      hashMatches: null as null,
+      blockchainVerified: null as null,
+      authentic: null as null,
     };
   }
 
