@@ -32,10 +32,10 @@ function UploadForm() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-6 pt-12 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto min-h-screen max-w-2xl px-6 pt-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Загрузка диплома</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Форма загрузки PDF-документа</p>
-      <form className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 bg-white dark:bg-[#111111] space-y-4 mt-8" onSubmit={handleSubmit}>
+      <form className="surface mt-8 space-y-4 rounded-lg border border-gray-200 p-6 dark:border-gray-800" onSubmit={handleSubmit}>
         <input
           name="studentFullName"
           placeholder="ФИО"

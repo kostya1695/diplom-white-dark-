@@ -15,6 +15,16 @@ export const metadata: Metadata = {
   description: "Система верификации дипломов на блокчейне",
 };
 
+const themeInitScript = `
+(function(){
+  try {
+    var d = document.documentElement;
+    var s = localStorage.getItem('theme');
+    var dark = s === 'dark' || (s !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    d.classList.toggle('dark', dark);
+  } catch (e) {}
+})();`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -22,11 +32,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ru" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
       <body className={`${inter.className} ${inter.variable} antialiased`}>
         <ThemeProvider>
           <AuthProvider>
             <SiteHeader />
-            <div className="transition-colors duration-200 ease-out">{children}</div>
+            {children}
           </AuthProvider>
         </ThemeProvider>
       </body>

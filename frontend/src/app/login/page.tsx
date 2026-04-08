@@ -68,7 +68,7 @@ function AuthPageInner() {
   }
 
   return (
-    <main className="max-w-2xl mx-auto px-6 pt-12 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto max-w-2xl min-h-screen px-6 pt-12">
       <div className={authCardClass}>
         <div className="flex border-b border-gray-200 dark:border-gray-800">
           <button
@@ -183,7 +183,7 @@ function AuthPageInner() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={<main className="p-10 text-center text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-[#0a0a0a] min-h-screen">Загрузка…</main>}>
+    <Suspense fallback={<main className="min-h-screen p-10 text-center text-sm text-gray-500 dark:text-gray-400">Загрузка…</main>}>
       <AuthPageInner />
     </Suspense>
   );

@@ -42,7 +42,7 @@ export function VerifyClient() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl space-y-8 px-4 py-10 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto max-w-3xl min-h-screen space-y-8 px-4 py-10">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Проверка диплома</h1>
         <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">

@@ -76,10 +76,10 @@ function DocumentsList() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-[1400px] px-6 lg:px-8 pt-12 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto min-h-screen w-full max-w-[1400px] px-6 pt-12 lg:px-8">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Документы</h1>
       <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Список загруженных документов и этапы согласования</p>
-      <div className="mt-8 border border-gray-200 dark:border-gray-800 rounded-lg p-6 bg-white dark:bg-[#111111] overflow-x-auto">
+      <div className="surface mt-8 overflow-x-auto rounded-lg border border-gray-200 p-6 dark:border-gray-800">
         <table className="w-full table-auto text-sm">
           <thead>
             <tr className="text-left text-gray-500 dark:text-gray-400">
@@ -135,7 +135,7 @@ function DocumentsList() {
       </div>
       {eventsDocId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 bg-white dark:bg-[#111111] max-w-lg w-full relative">
+          <div className="surface relative w-full max-w-lg rounded-lg border border-gray-200 p-6 dark:border-gray-800">
             <button className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" onClick={() => setEventsDocId(null)}>✕</button>
             <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">История: {eventsDocId}</h2>
             <div className="border-l-2 border-gray-200 dark:border-gray-700 ml-3 pl-4 space-y-5">

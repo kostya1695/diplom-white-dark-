@@ -25,7 +25,7 @@ function DocumentDetailInner() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10 bg-white dark:bg-[#0a0a0a] min-h-screen">
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-10">
         <p className="text-[var(--danger)]">{error}</p>
         <Link href="/documents" className="mt-4 inline-block text-[var(--accent)]">
           К списку
@@ -36,14 +36,14 @@ function DocumentDetailInner() {
 
   if (!doc) {
     return (
-      <main className="mx-auto max-w-3xl px-4 py-10 bg-white dark:bg-[#0a0a0a] min-h-screen">
+      <main className="mx-auto min-h-screen max-w-3xl px-4 py-10">
         <p className="text-gray-500 dark:text-gray-400">Загрузка…</p>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto max-w-4xl space-y-6 px-4 py-10 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto min-h-screen max-w-4xl space-y-6 px-4 py-10">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-sm text-gray-500 dark:text-gray-400">Документ</p>

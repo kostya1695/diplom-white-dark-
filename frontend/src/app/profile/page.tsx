@@ -36,7 +36,7 @@ function ProfileInner() {
 
   if (error) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-10 bg-white dark:bg-[#0a0a0a] min-h-screen">
+      <main className="mx-auto min-h-screen max-w-lg px-4 py-10">
         <p className="text-[var(--danger)]">{error}</p>
       </main>
     );
@@ -44,7 +44,7 @@ function ProfileInner() {
 
   if (!data) {
     return (
-      <main className="mx-auto max-w-lg px-4 py-10 text-sm text-gray-500 dark:text-gray-400 bg-white dark:bg-[#0a0a0a] min-h-screen">Загрузка…</main>
+      <main className="mx-auto min-h-screen max-w-lg px-4 py-10 text-sm text-gray-500 dark:text-gray-400">Загрузка…</main>
     );
   }
 
@@ -60,10 +60,10 @@ function ProfileInner() {
   }
 
   return (
-    <main className="max-w-4xl mx-auto px-6 pt-12 space-y-8 bg-white dark:bg-[#0a0a0a] min-h-screen">
+    <main className="mx-auto min-h-screen max-w-4xl space-y-8 px-6 pt-12">
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Профиль</h1>
 
-      <div className="border border-gray-200 dark:border-gray-800 rounded-lg p-6 bg-white dark:bg-[#111111] space-y-4 text-sm">
+      <div className="surface space-y-4 rounded-lg border border-gray-200 p-6 text-sm dark:border-gray-800">
         <div className="flex flex-wrap justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
           <span className="text-sm text-blue-500 dark:text-blue-400">Email</span>
           <span className="text-sm font-medium text-gray-900 dark:text-white text-right">{data.email}</span>

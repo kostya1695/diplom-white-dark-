@@ -27,7 +27,7 @@ export function SiteHeader() {
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0a0a0a]">
+    <header className="sticky top-0 z-40 border-b border-gray-200 dark:border-gray-800 bg-background transition-[background-color,border-color] duration-200 ease-out">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-6 py-3">
         <Link href="/" className="text-sm font-bold text-gray-900 dark:text-white">
           blockchain-diplom
