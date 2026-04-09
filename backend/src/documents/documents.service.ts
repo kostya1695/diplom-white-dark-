@@ -16,7 +16,7 @@ import { ethers } from 'ethers';
 import { DocumentEvent } from './document-event.entity';
 import { UserRole } from '../common/enums';
 
-type JwtUser = { sub: string; fullName: string; email?: string; role?: UserRole };
+type JwtUser = { sub: string; fullName: string; email?: string; role?: UserRole | null };
 
 @Injectable()
 export class DocumentsService {
@@ -135,19 +135,26 @@ export class DocumentsService {
     return this.toResponse(saved);
   }
 
-  async listForUser(user: { sub: string; role: UserRole }) {
+  async listForUser(user: { sub: string; role: UserRole | null }) {
     const allRoles = [UserRole.ADMIN, UserRole.KAFEDRA, UserRole.DEKANAT];
     const rows = await this.docsRepo.find({
-      where: allRoles.includes(user.role) ? {} : { createdByUserId: user.sub },
+      where:
+        user.role != null && allRoles.includes(user.role)
+          ? {}
+          : { createdByUserId: user.sub },
       order: { createdAt: 'DESC' },
     });
     return rows.map((d) => this.toResponse(d));
   }
 
-  async getByDocumentId(documentId: string, user?: { sub: string; role: UserRole }) {
+  async getByDocumentId(documentId: string, user?: { sub: string; role: UserRole | null }) {
     const doc = await this.docsRepo.findOne({ where: { documentId } });
     if (!doc) throw new NotFoundException('Документ не найден');
-    if (user && user.role === UserRole.STUDENT && doc.createdByUserId !== user.sub) {
+    if (
+      user &&
+      (user.role === UserRole.STUDENT || user.role == null) &&
+      doc.createdByUserId !== user.sub
+    ) {
       throw new NotFoundException('Документ не найден');
     }
     return this.toResponse(doc);
@@ -213,9 +220,12 @@ export class DocumentsService {
     return this.toResponse(await this.docsRepo.save(doc));
   }
 
-  async events(documentId: string, user: { sub: string; role: UserRole }) {
+  async events(documentId: string, user: { sub: string; role: UserRole | null }) {
     const doc = await this.requireDoc(documentId);
-    if (user.role === UserRole.STUDENT && doc.createdByUserId !== user.sub) {
+    if (
+      (user.role === UserRole.STUDENT || user.role == null) &&
+      doc.createdByUserId !== user.sub
+    ) {
       throw new NotFoundException('Документ не найден');
     }
     const rows = await this.eventsRepo.find({

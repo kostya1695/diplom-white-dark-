@@ -10,7 +10,6 @@ import { User } from '../users/user.entity';
 import { LoginDto, RegisterDto } from './dto';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { UserRole } from '../common/enums';
 import { DocumentsService } from '../documents/documents.service';
 import { ConfigService } from '@nestjs/config';
 import { Wallet, getAddress } from 'ethers';
@@ -34,7 +33,8 @@ export class AuthService {
     const user = this.usersRepo.create({
       email: dto.email.toLowerCase().trim(),
       fullName: dto.fullName.trim(),
-      role: UserRole.STUDENT,
+      role: null,
+      university: null,
       passwordHash,
     });
     this.assignGeneratedWallet(user);
@@ -61,6 +61,7 @@ export class AuthService {
         email: true,
         fullName: true,
         role: true,
+        university: true,
         createdAt: true,
       },
     });
@@ -72,6 +73,7 @@ export class AuthService {
       email: user.email,
       fullName: user.fullName,
       role: user.role,
+      university: user.university,
       walletAddress: user.walletAddress,
       createdAt: user.createdAt,
       documents,

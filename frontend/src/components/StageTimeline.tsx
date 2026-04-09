@@ -36,52 +36,78 @@ function stageState(
   return "pending";
 }
 
+function circleBorderClass(state: ReturnType<typeof stageState>) {
+  if (state === "active") return "border-[var(--accent)]";
+  return "border-[var(--border)]";
+}
+
+function titleClass(state: ReturnType<typeof stageState>) {
+  if (state === "active") return "text-[var(--accent)]";
+  if (state === "complete") return "text-[var(--foreground)]";
+  return "text-[var(--muted)]";
+}
+
 export function StageTimeline({ document: doc }: { document: DocumentRecord }) {
+  const lastIndex = STAGES.length - 1;
+
   return (
-    <div className="panel p-6 space-y-4">
-      <h3 className="text-lg font-semibold">Этапы обработки</h3>
-      <ol className="space-y-4">
+    <div className="panel p-6">
+      <h3 className="text-lg font-semibold text-[var(--foreground)]">Этапы обработки</h3>
+      <ol className="mt-4 list-none p-0">
         {STAGES.map((s, i) => {
           const state = stageState(i, doc);
-          const isAccent = state === "active";
+          const showConnector = i < lastIndex;
+
           return (
             <li
               key={s.title}
-              className="flex gap-3 border-l pl-4"
-              style={{
-                borderColor: isAccent ? "var(--accent)" : "var(--border)",
-              }}
+              className="grid grid-cols-[2rem_minmax(0,1fr)] items-stretch gap-x-3"
             >
-              <div className="-ml-[21px] mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border bg-[var(--background)]"
-                style={{ borderColor: "var(--border)" }}
+              {/* Левая колонка: кружок + вертикальная линия по центру дорожки */}
+              <div
+                className={
+                  showConnector
+                    ? "flex h-full min-h-0 min-w-0 flex-col items-center"
+                    : "flex min-w-0 flex-col items-center self-start"
+                }
               >
-                {state === "complete" && (
-                  <Check className="h-4 w-4" style={{ color: "var(--success)" }} />
-                )}
-                {state === "active" && (
-                  <CircleDot className="h-4 w-4" style={{ color: "var(--accent)" }} />
-                )}
-                {state === "pending" && (
-                  <Circle className="h-4 w-4 text-[var(--muted)]" />
-                )}
-                {state === "skipped" && (
-                  <SkipForward className="h-4 w-4 text-[var(--muted)]" />
+                <div
+                  className={`relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-[var(--background)] ${circleBorderClass(state)}`}
+                >
+                  {state === "complete" && (
+                    <Check className="h-4 w-4 shrink-0" style={{ color: "var(--success)" }} />
+                  )}
+                  {state === "active" && (
+                    <CircleDot className="h-4 w-4 shrink-0" style={{ color: "var(--accent)" }} />
+                  )}
+                  {state === "pending" && <Circle className="h-4 w-4 shrink-0 text-[var(--muted)]" />}
+                  {state === "skipped" && <SkipForward className="h-4 w-4 shrink-0 text-[var(--muted)]" />}
+                </div>
+                {showConnector && (
+                  <div
+                    className="mt-0 w-px flex-1 min-h-[0.75rem] bg-[var(--border)]"
+                    aria-hidden
+                  />
                 )}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-semibold">
+
+              {/* Правая колонка: заголовок, бейдж, описание, опционально хэш */}
+              <div
+                className={`flex min-w-0 flex-col gap-1.5 ${i < lastIndex ? "pb-6" : ""}`}
+              >
+                <div className="inline-flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
+                  <span className={`min-w-0 text-sm font-semibold leading-tight ${titleClass(state)}`}>
                     {i + 1}. {s.title}
                   </span>
                   {s.optional && (
-                    <span className="rounded-[6px] border px-2 py-0.5 text-[10px] uppercase tracking-wide text-[var(--muted)]">
+                    <span className="inline-flex shrink-0 items-center rounded border border-[var(--border)] bg-[var(--surface)] px-1.5 py-0.5 text-[10px] font-medium uppercase leading-none tracking-wide text-[var(--muted)]">
                       Скоро
                     </span>
                   )}
                 </div>
-                <p className="text-sm text-[var(--muted)]">{s.description}</p>
+                <p className="text-sm leading-snug text-[var(--muted)]">{s.description}</p>
                 {i === 0 && doc.hashPreview && (
-                  <p className="mt-1 text-xs text-[var(--muted)]">
+                  <p className="text-xs leading-snug text-[var(--muted)]">
                     Хэш: {doc.hashPreview}…
                   </p>
                 )}

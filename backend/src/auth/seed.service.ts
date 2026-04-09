@@ -17,6 +17,11 @@ export class SeedService implements OnApplicationBootstrap {
     const exists = await this.usersRepo.findOne({ where: { email } });
     if (exists) {
       this.log.log(`Админ уже есть: ${email}`);
+      if (exists.role === UserRole.ADMIN && exists.university != null) {
+        exists.university = null;
+        await this.usersRepo.save(exists);
+        this.log.log('У администратора сброшен университет (должен быть пустым)');
+      }
       return;
     }
     const passwordHash = await bcrypt.hash(password, 10);
@@ -25,6 +30,7 @@ export class SeedService implements OnApplicationBootstrap {
         email,
         fullName: 'Administrator',
         role: UserRole.ADMIN,
+        university: null,
         passwordHash,
       }),
     );

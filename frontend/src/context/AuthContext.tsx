@@ -13,7 +13,7 @@ export type AuthUser = {
   sub: string;
   email: string;
   fullName: string;
-  role: string;
+  role: string | null;
 };
 
 type AuthContextValue = {

@@ -16,7 +16,8 @@ type ProfileDoc = {
 type Profile = {
   email: string;
   fullName: string;
-  role: string;
+  role: string | null;
+  university?: string | null;
   walletAddress?: string;
   createdAt: string;
   documents: ProfileDoc[];
@@ -48,7 +49,12 @@ function ProfileInner() {
     );
   }
 
-  const roleLabel = data.role === "ADMIN" ? "Администратор" : "Пользователь";
+  const roleLabel =
+    data.role == null
+      ? "не назначена"
+      : data.role === "ADMIN"
+        ? "Администратор"
+        : "Пользователь";
   const wallet = data.walletAddress ?? "";
   const walletShort = wallet ? `${wallet.slice(0, 6)}...${wallet.slice(-4)}` : "—";
 
@@ -75,7 +81,7 @@ function ProfileInner() {
         <div className="flex flex-wrap justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">
           <span className="text-sm text-blue-500 dark:text-blue-400">Роль</span>
           <span className="text-sm font-medium text-gray-900 dark:text-white text-right">
-            {data.role} — {roleLabel}
+            {data.role == null ? "—" : `${data.role} — ${roleLabel}`}
           </span>
         </div>
         <div className="flex flex-wrap justify-between gap-2 border-b border-gray-200 dark:border-gray-800 pb-3">

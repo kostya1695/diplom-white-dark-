@@ -46,7 +46,13 @@ services:
     volumes:
       - chain_data:/data
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8545"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://127.0.0.1:8545',(r)=>{r.resume();process.exit(0)}).on('error',()=>process.exit(1))",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5

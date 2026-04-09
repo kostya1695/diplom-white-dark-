@@ -8,11 +8,17 @@ const ASSIGNABLE_ROLES = ["STUDENT", "KAFEDRA", "DEKANAT"] as const;
 
 type AssignableRole = (typeof ASSIGNABLE_ROLES)[number];
 
+/** Совпадает с backend enum University */
+const UNIVERSITIES = ["KBTU", "UIB", "ENERGO", "SATBAYEV"] as const;
+
+type UniversityId = (typeof UNIVERSITIES)[number];
+
 type UserRow = {
   id: string;
   email: string;
   fullName: string;
-  role: string;
+  role: string | null;
+  university: string | null;
   createdAt: string;
 };
 
@@ -31,13 +37,51 @@ function roleLabel(r: string) {
   }
 }
 
+function universityLabel(u: string): string {
+  switch (u) {
+    case "KBTU":
+      return "KBTU";
+    case "UIB":
+      return "UIB";
+    case "ENERGO":
+      return "Energo University";
+    case "SATBAYEV":
+      return "Satbayev University";
+    default:
+      return u;
+  }
+}
+
+function isUniversityId(v: string): v is UniversityId {
+  return (UNIVERSITIES as readonly string[]).includes(v);
+}
+
+/** Пустой университет в БД → null; для сравнений */
+function normUni(v: string | null | undefined): string | null {
+  if (v == null || v === "") return null;
+  return v;
+}
+
+function displayCurrentRole(role: string | null): string {
+  if (role == null || role === "") return "Не назначена";
+  return roleLabel(role);
+}
+
+function displayCurrentUniversity(u: string | null, isAdminRow: boolean): string {
+  if (isAdminRow) return "—";
+  const n = normUni(u);
+  if (n == null) return "Не задан";
+  return universityLabel(n);
+}
+
 function RolesPageInner() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  /** userId → выбранная новая роль (только отличия от сервера) */
-  const [pending, setPending] = useState<Record<string, AssignableRole>>({});
+  /** Отличие от сервера: роль может быть null (снять роль) */
+  const [pendingRole, setPendingRole] = useState<Record<string, AssignableRole | null>>({});
+  const [pendingUniversity, setPendingUniversity] = useState<Record<string, UniversityId | null>>({});
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<{ kind: "ok" | "err"; text: string } | null>(null);
 
@@ -70,16 +114,20 @@ function RolesPageInner() {
   }, [users, search]);
 
   const hasChanges = useMemo(() => {
-    for (const [id, role] of Object.entries(pending)) {
-      const u = users.find((x) => x.id === id);
-      if (u && u.role !== role) return true;
+    for (const u of users) {
+      if (u.role === "ADMIN") continue;
+      const pr = pendingRole[u.id];
+      const pu = pendingUniversity[u.id];
+      if (pr !== undefined && pr !== u.role) return true;
+      if (pu !== undefined && normUni(pu) !== normUni(u.university)) return true;
     }
     return false;
-  }, [pending, users]);
+  }, [pendingRole, pendingUniversity, users]);
 
-  function setDraftRole(user: UserRow, next: AssignableRole) {
+  function setDraftRole(user: UserRow, raw: string) {
     if (user.role === "ADMIN") return;
-    setPending((prev) => {
+    const next: AssignableRole | null = raw === "" ? null : (raw as AssignableRole);
+    setPendingRole((prev) => {
       const nextMap = { ...prev };
       if (next === user.role) {
         delete nextMap[user.id];
@@ -90,25 +138,75 @@ function RolesPageInner() {
     });
   }
 
-  function selectValue(user: UserRow): AssignableRole {
-    if (user.role === "ADMIN") return "STUDENT";
-    const p = pending[user.id];
-    if (p !== undefined) return p;
+  function setDraftUniversity(user: UserRow, raw: string) {
+    if (user.role === "ADMIN") return;
+    const next: UniversityId | null = raw === "" ? null : (raw as UniversityId);
+    setPendingUniversity((prev) => {
+      const nextMap = { ...prev };
+      if (normUni(next) === normUni(user.university)) {
+        delete nextMap[user.id];
+      } else {
+        nextMap[user.id] = next;
+      }
+      return nextMap;
+    });
+  }
+
+  function selectRoleValue(user: UserRow): string {
+    const p = pendingRole[user.id];
+    if (p !== undefined) return p === null ? "" : p;
+    if (user.role == null || user.role === "") return "";
     return user.role as AssignableRole;
+  }
+
+  function selectUniversityValue(user: UserRow): string {
+    const p = pendingUniversity[user.id];
+    if (p !== undefined) return p === null ? "" : p;
+    const raw = user.university;
+    if (raw == null || raw === "") return "";
+    if (isUniversityId(raw)) return raw;
+    return "";
+  }
+
+  function rowChanged(u: UserRow): boolean {
+    if (u.role === "ADMIN") return false;
+    const pr = pendingRole[u.id];
+    const pu = pendingUniversity[u.id];
+    if (pr !== undefined && pr !== u.role) return true;
+    if (pu !== undefined && normUni(pu) !== normUni(u.university)) return true;
+    return false;
   }
 
   async function save() {
     if (!hasChanges) return;
-    const updates = Object.entries(pending)
-      .map(([userId, role]) => {
-        const u = users.find((x) => x.id === userId);
-        if (!u || u.role === "ADMIN" || u.role === role) return null;
-        return { userId, role };
-      })
-      .filter((x): x is { userId: string; role: AssignableRole } => x !== null);
+
+    const updates: {
+      userId: string;
+      role?: AssignableRole | null;
+      university?: UniversityId | null;
+    }[] = [];
+
+    for (const u of users) {
+      if (u.role === "ADMIN") continue;
+      const pr = pendingRole[u.id];
+      const pu = pendingUniversity[u.id];
+      const roleChanged = pr !== undefined && pr !== u.role;
+      const uniChanged = pu !== undefined && normUni(pu) !== normUni(u.university);
+      if (!roleChanged && !uniChanged) continue;
+
+      const item: {
+        userId: string;
+        role?: AssignableRole | null;
+        university?: UniversityId | null;
+      } = { userId: u.id };
+      if (roleChanged) item.role = pr!;
+      if (uniChanged) item.university = pu!;
+      updates.push(item);
+    }
 
     if (updates.length === 0) {
-      setPending({});
+      setPendingRole({});
+      setPendingUniversity({});
       return;
     }
 
@@ -117,7 +215,8 @@ function RolesPageInner() {
     try {
       await api.patch("/users/roles", { updates }, { headers: authHeaders() });
       setNotice({ kind: "ok", text: "Изменения сохранены" });
-      setPending({});
+      setPendingRole({});
+      setPendingUniversity({});
       await loadUsers();
     } catch (e: unknown) {
       const data = e && typeof e === "object" && "response" in e ? (e as { response?: { data?: unknown } }).response?.data : undefined;
@@ -138,12 +237,15 @@ function RolesPageInner() {
     return () => clearTimeout(t);
   }, [notice]);
 
+  const selectClassName =
+    "w-full max-w-[220px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-white dark:focus:border-blue-500";
+
   return (
-    <main className="relative mx-auto min-h-screen max-w-5xl px-6 pb-28 pt-12">
+    <main className="relative mx-auto min-h-screen max-w-6xl px-6 pb-28 pt-12">
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">Роли</h1>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Назначение ролей пользователям. Изменения применяются после нажатия «Сохранить».
+          Назначение ролей и университетов. Изменения применяются после нажатия «Сохранить».
         </p>
       </div>
 
@@ -182,31 +284,33 @@ function RolesPageInner() {
       )}
 
       <div className="surface overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-800">
-        <table className="w-full min-w-[640px] table-fixed text-sm">
+        <table className="w-full min-w-[900px] table-fixed text-sm">
           <thead>
             <tr className="border-b border-gray-200 text-left text-gray-500 dark:border-gray-800 dark:text-gray-400">
-              <th className="px-5 py-3.5 font-medium">Email</th>
-              <th className="w-44 px-5 py-3.5 font-medium">Текущая роль</th>
-              <th className="w-56 px-5 py-3.5 font-medium">Новая роль</th>
+              <th className="px-4 py-3.5 font-medium">Email</th>
+              <th className="w-36 px-4 py-3.5 font-medium">Текущая роль</th>
+              <th className="w-56 px-4 py-3.5 font-medium">Новая роль</th>
+              <th className="w-44 px-4 py-3.5 font-medium">Текущий университет</th>
+              <th className="w-56 px-4 py-3.5 font-medium">Новый университет</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan={3} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
                   Загрузка…
                 </td>
               </tr>
             ) : filtered.length === 0 ? (
               <tr>
-                <td colSpan={3} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={5} className="px-5 py-10 text-center text-gray-500 dark:text-gray-400">
                   {users.length === 0 ? "Нет пользователей" : "Ничего не найдено"}
                 </td>
               </tr>
             ) : (
               filtered.map((u) => {
                 const isAdmin = u.role === "ADMIN";
-                const changed = !isAdmin && pending[u.id] !== undefined && pending[u.id] !== u.role;
+                const changed = rowChanged(u);
                 return (
                   <tr
                     key={u.id}
@@ -214,7 +318,7 @@ function RolesPageInner() {
                       changed ? "bg-blue-50/40 dark:bg-blue-950/20" : "hover:bg-gray-50/80 dark:hover:bg-white/[0.03]"
                     }`}
                   >
-                    <td className="px-5 py-3.5 align-middle">
+                    <td className="px-4 py-3.5 align-middle">
                       <span className="block truncate text-gray-900 dark:text-white" title={u.email}>
                         {u.email}
                       </span>
@@ -224,22 +328,45 @@ function RolesPageInner() {
                         </span>
                       ) : null}
                     </td>
-                    <td className="px-5 py-3.5 align-middle text-gray-700 dark:text-gray-300">
-                      {roleLabel(u.role)}
+                    <td className="px-4 py-3.5 align-middle text-gray-700 dark:text-gray-300">
+                      {displayCurrentRole(u.role)}
                     </td>
-                    <td className="px-5 py-3.5 align-middle">
+                    <td className="px-4 py-3.5 align-middle">
                       {isAdmin ? (
                         <span className="text-xs text-gray-500 dark:text-gray-500">Изменение недоступно</span>
                       ) : (
                         <select
-                          value={selectValue(u)}
-                          onChange={(e) => setDraftRole(u, e.target.value as AssignableRole)}
+                          value={selectRoleValue(u)}
+                          onChange={(e) => setDraftRole(u, e.target.value)}
                           disabled={saving}
-                          className="w-full max-w-[220px] rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none transition-colors focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:opacity-60 dark:border-gray-600 dark:bg-[#1a1a1a] dark:text-white dark:focus:border-blue-500"
+                          className={selectClassName}
                         >
+                          <option value="">Не назначена</option>
                           {ASSIGNABLE_ROLES.map((r) => (
                             <option key={r} value={r}>
                               {roleLabel(r)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                    </td>
+                    <td className="px-4 py-3.5 align-middle text-gray-700 dark:text-gray-300">
+                      {displayCurrentUniversity(u.university, isAdmin)}
+                    </td>
+                    <td className="px-4 py-3.5 align-middle">
+                      {isAdmin ? (
+                        <span className="text-xs text-gray-500 dark:text-gray-500">Изменение недоступно</span>
+                      ) : (
+                        <select
+                          value={selectUniversityValue(u)}
+                          onChange={(e) => setDraftUniversity(u, e.target.value)}
+                          disabled={saving}
+                          className={selectClassName}
+                        >
+                          <option value="">Не задан</option>
+                          {UNIVERSITIES.map((uni) => (
+                            <option key={uni} value={uni}>
+                              {universityLabel(uni)}
                             </option>
                           ))}
                         </select>

@@ -1,6 +1,14 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsIn, IsUUID, ValidateNested } from 'class-validator';
-import { UserRole } from '../common/enums';
+import {
+  IsArray,
+  IsEnum,
+  IsIn,
+  IsOptional,
+  IsUUID,
+  ValidateIf,
+  ValidateNested,
+} from 'class-validator';
+import { University, UserRole } from '../common/enums';
 
 /** Роли, которые можно назначить через API (не ADMIN) */
 export const ASSIGNABLE_USER_ROLES = [
@@ -15,8 +23,15 @@ export class RoleUpdateItemDto {
   @IsUUID('4')
   userId!: string;
 
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
   @IsIn(ASSIGNABLE_USER_ROLES as unknown as UserRole[])
-  role!: AssignableUserRole;
+  role?: AssignableUserRole | null;
+
+  @IsOptional()
+  @ValidateIf((_, v) => v !== null && v !== undefined)
+  @IsEnum(University)
+  university?: University | null;
 }
 
 export class BatchUpdateRolesDto {

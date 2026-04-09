@@ -4,7 +4,9 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci
+    apk add --no-cache --virtual .native-deps python3 make g++ \
+    && npm ci \
+    && apk del .native-deps
 
 COPY . .
 RUN npm run build
@@ -15,7 +17,9 @@ RUN apk add --no-cache wget
 
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+    apk add --no-cache --virtual .native-deps python3 make g++ \
+    && npm ci --omit=dev \
+    && apk del .native-deps
 
 COPY --from=builder /app/dist ./dist
 
